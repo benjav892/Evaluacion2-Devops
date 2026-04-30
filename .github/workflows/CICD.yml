@@ -33,7 +33,8 @@ jobs:
     - name: Run Snyk to check for vulnerabilities
       uses: snyk/actions/maven-3-jdk-21@master
       env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        JAVA_HOME: ${{ env.JAVA_HOME }} # Explicitly pass the variable
     
     - name: Build with Maven
       run: mvn clean package
