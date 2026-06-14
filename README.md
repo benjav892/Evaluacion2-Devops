@@ -149,3 +149,50 @@ Once the application is running:
 
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
 - **OpenAPI spec (JSON):** http://localhost:8080/api-docs
+
+-----------------------------------------------------------------------------------
+## Pipeline CI/CD — Trazabilidad y Calidad
+
+Este proyecto implementa un pipeline de integración y entrega continua con GitHub Actions, organizado en tres etapas secuenciales.
+
+### Etapas del pipeline
+
+**1. Build & Test**
+Se compila el proyecto y se ejecutan las pruebas unitarias con JUnit 5 usando `mvn clean test`. El plugin JaCoCo genera un reporte de cobertura de código disponible como artefacto descargable en cada ejecución. Esto garantiza que el código tenga cobertura verificable antes de continuar.
+
+**2. Security Scan**
+Se ejecuta un análisis de dependencias con Snyk. Si se detectan más de 3 vulnerabilidades de severidad `high` o `critical`, el pipeline se detiene con `exit 1`, bloqueando el despliegue. Los reportes en formato JSON y SARIF quedan disponibles como artefactos para auditoría.
+
+**3. Publish & Deploy**
+La imagen Docker se construye usando un Dockerfile multistage (imagen base `eclipse-temurin:21-jre-alpine` para menor superficie de ataque) y se publica en GitHub Container Registry (GHCR) con dos tags: `latest` y el SHA del commit para trazabilidad exacta. Finalmente se despliega usando Docker Compose y se verifica que el endpoint `/greetings` responde correctamente.
+
+### Cómo se garantiza la trazabilidad
+
+- Cada imagen publicada lleva el tag del SHA del commit, lo que permite saber exactamente qué código está corriendo en producción.
+- Los artefactos de cobertura (JaCoCo) y seguridad (Snyk) quedan almacenados 14 días en cada ejecución del pipeline.
+- El pipeline falla de forma explícita en cada etapa, impidiendo que código sin pruebas o con vulnerabilidades críticas llegue a producción.
+
+### Cómo se garantiza la calidad
+
+- **Pruebas unitarias**: JUnit 5 con 4 casos de prueba que cubren los escenarios críticos del controlador.
+- **Cobertura de código**: JaCoCo mide las líneas y ramas ejecutadas durante los tests.
+- **Análisis de seguridad**: Snyk escanea dependencias y bloquea el pipeline si supera el umbral de vulnerabilidades definido.
+- **Orquestación**: Docker Compose gestiona el ciclo de vida del contenedor con healthcheck incorporado, garantizando que la aplicación está saludable antes de considerarse desplegada.
+
+### Cómo ejecutar localmente con Docker Compose
+
+```bash
+docker compose up --build
+```
+
+La aplicación queda disponible en `http://localhost:8080`.
+
+### Integrantes
+
+- Benjamin Vasquez (benjav892)
+- Camilo Vera(cvera4)
+
+### Declaración de uso de IA
+
+Se utilizó Claude (Anthropic) como apoyo para la estructuración del pipeline CI/CD y la redacción técnica de esta documentación. Todas las decisiones técnicas, justificaciones y reflexiones individuales son propias del equipo. Referencia: https://bibliotecas.duoc.cl/ia
+
